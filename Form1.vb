@@ -30,6 +30,8 @@ Public Class Form1
     End Sub
 
     Private Async Sub Start_Crawling_Button_Click(sender As Object, e As EventArgs) Handles Start_Crawling_Button.Click
+        Start_Crawling_Button.Text = "搜尋中..."
+        Start_Crawling_Button.Enabled = False
         Start_Time_TextBox.Text = Now.ToString("G")
         End_Time_TextBox.Text = ""
 
@@ -106,6 +108,8 @@ Public Class Form1
         Next
         Searching_Status_Label.Text = "搜尋完成"
         End_Time_TextBox.Text = Now.ToString("G")
+        Start_Crawling_Button.Text = "任務開始"
+        Start_Crawling_Button.Enabled = True
         MsgBox("搜尋任務完成")
     End Sub
 
@@ -262,7 +266,7 @@ Public Class Form1
 
         For Each match As Match In matches
             If Not phones.Contains(match.Value) Then
-                phones.Add(match.Value)
+                phones.Add(match.Value.Replace(" ", ""))
             End If
         Next
 
