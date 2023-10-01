@@ -220,14 +220,14 @@ Public Class Form1
 
             For idx As Integer = 0 To max_count - 1
 
-                Dim data_line = jobPosting.title.Trim() & ","
+                Dim data_line = WebSite_URL_Prefix + job_Url & ";"
 
                 If idx >= 0 AndAlso idx < mail_list.Count Then
                     'Debug.WriteLine(mail_list.GetItemByIndex(idx))
-                    data_line = data_line + mail_list.GetItemByIndex(idx) + ","
+                    data_line = data_line + mail_list.GetItemByIndex(idx) + ";"
                 Else
                     'Debug.WriteLine("N/A")
-                    data_line = data_line + "N/A" + ","
+                    data_line = data_line + "N/A" + ";"
                 End If
 
                 If idx >= 0 AndAlso idx < phone_list.Count Then
