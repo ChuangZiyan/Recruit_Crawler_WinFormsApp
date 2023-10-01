@@ -33,6 +33,7 @@ Partial Class Form1
         Label3 = New Label()
         JobCollection_Counter_Label = New Label()
         Jobcat_Progress_Count_Label = New Label()
+        Debug_Msg_ListBox = New ListBox()
         CType(MainWebView2, ComponentModel.ISupportInitialize).BeginInit()
         SuspendLayout()
         ' 
@@ -41,9 +42,9 @@ Partial Class Form1
         MainWebView2.AllowExternalDrop = True
         MainWebView2.CreationProperties = Nothing
         MainWebView2.DefaultBackgroundColor = Color.White
-        MainWebView2.Location = New Point(12, 90)
+        MainWebView2.Location = New Point(338, 90)
         MainWebView2.Name = "MainWebView2"
-        MainWebView2.Size = New Size(944, 477)
+        MainWebView2.Size = New Size(618, 477)
         MainWebView2.Source = New Uri("https://www.google.com/", UriKind.Absolute)
         MainWebView2.TabIndex = 0
         MainWebView2.ZoomFactor = 1R
@@ -134,11 +135,21 @@ Partial Class Form1
         Jobcat_Progress_Count_Label.TabIndex = 13
         Jobcat_Progress_Count_Label.Text = "剩餘工作類別數量 : 0 "
         ' 
+        ' Debug_Msg_ListBox
+        ' 
+        Debug_Msg_ListBox.FormattingEnabled = True
+        Debug_Msg_ListBox.ItemHeight = 19
+        Debug_Msg_ListBox.Location = New Point(12, 90)
+        Debug_Msg_ListBox.Name = "Debug_Msg_ListBox"
+        Debug_Msg_ListBox.Size = New Size(320, 479)
+        Debug_Msg_ListBox.TabIndex = 14
+        ' 
         ' Form1
         ' 
         AutoScaleDimensions = New SizeF(9F, 19F)
         AutoScaleMode = AutoScaleMode.Font
         ClientSize = New Size(968, 586)
+        Controls.Add(Debug_Msg_ListBox)
         Controls.Add(Jobcat_Progress_Count_Label)
         Controls.Add(JobCollection_Counter_Label)
         Controls.Add(Label3)
@@ -168,4 +179,5 @@ Partial Class Form1
     Friend WithEvents Label3 As Label
     Friend WithEvents JobCollection_Counter_Label As Label
     Friend WithEvents Jobcat_Progress_Count_Label As Label
+    Friend WithEvents Debug_Msg_ListBox As ListBox
 End Class

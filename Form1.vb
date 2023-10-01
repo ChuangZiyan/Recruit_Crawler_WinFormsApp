@@ -201,53 +201,67 @@ Public Class Form1
         Dim match As Match = regex.Match(script)
 
         If match.Success Then
-            Dim jsonStr As String = match.Groups(1).Value
-            'Debug.WriteLine(jsonStr)
 
-            Dim jobPosting As JobPosting = JsonConvert.DeserializeObject(Of JobPosting)(jsonStr)
+            Try
 
-            'Debug.WriteLine("des: " & jobPosting.description)
+                Dim jsonStr As String = match.Groups(1).Value
+                'Debug.WriteLine(jsonStr)
+                Dim jobPosting As JobPosting = JsonConvert.DeserializeObject(Of JobPosting)(jsonStr)
 
-            Dim mail_list = FindEmails(jobPosting.description)
-            Dim phone_list = FindPhoneNumbers(jobPosting.description)
-            Dim max_count As Integer
+                'Debug.WriteLine("des: " & jobPosting.description)
 
-            If mail_list.Count >= phone_list.Count Then
-                max_count = mail_list.Count
-            Else
-                max_count = phone_list.Count
-            End If
+                Dim mail_list = FindEmails(jobPosting.description)
+                Dim phone_list = FindPhoneNumbers(jobPosting.description)
+                Dim max_count As Integer
 
-            For idx As Integer = 0 To max_count - 1
-
-                Dim data_line = WebSite_URL_Prefix + job_Url & ";"
-
-
-                If idx >= 0 AndAlso idx < phone_list.Count Then
-                    'Debug.WriteLine(phone_list.GetItemByIndex(idx))
-                    data_line += phone_list.GetItemByIndex(idx) + ";"
+                If mail_list.Count >= phone_list.Count Then
+                    max_count = mail_list.Count
                 Else
-                    'Debug.WriteLine("N/A")
-                    data_line += "N/A" + ";"
+                    max_count = phone_list.Count
                 End If
 
+                For idx As Integer = 0 To max_count - 1
 
-                If idx >= 0 AndAlso idx < mail_list.Count Then
-                    'Debug.WriteLine(mail_list.GetItemByIndex(idx))
-                    data_line += data_line + mail_list.GetItemByIndex(idx)
-                Else
-                    'Debug.WriteLine("N/A")
-                    data_line += data_line + "N/A"
-                End If
+                    Dim data_line = job_Url & ";"
 
-                'Debug.WriteLine(data_line)
+                    If idx >= 0 AndAlso idx < phone_list.Count Then
+                        'Debug.WriteLine(phone_list.GetItemByIndex(idx))
+                        data_line += phone_list.GetItemByIndex(idx) + ";"
+                    Else
+                        'Debug.WriteLine("N/A")
+                        data_line += "N/A" + ";"
+                    End If
 
-                Using writer As New StreamWriter(result_filePath, True)
-                    writer.WriteLine(data_line)
+
+                    If idx >= 0 AndAlso idx < mail_list.Count Then
+                        'Debug.WriteLine(mail_list.GetItemByIndex(idx))
+                        data_line += data_line + mail_list.GetItemByIndex(idx)
+                    Else
+                        'Debug.WriteLine("N/A")
+                        data_line += data_line + "N/A"
+                    End If
+
+                    'Debug.WriteLine(data_line)
+
+                    Using writer As New StreamWriter(result_filePath, True)
+                        writer.WriteLine(data_line)
+                        writer.Close()
+                    End Using
+
+                Next
+
+            Catch ex As Exception
+
+                Debug_Msg_ListBox.Items.Add("網址發生例外: " & WebSite_URL_Prefix + job_Url)
+                Using writer As New StreamWriter(searchingResultDir + "\DebugMsg_" + DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss") + ".txt", True)
+                    writer.WriteLine(script)
                     writer.Close()
                 End Using
 
-            Next
+            End Try
+
+
+
 
         Else
             Debug.WriteLine("Not Found")
