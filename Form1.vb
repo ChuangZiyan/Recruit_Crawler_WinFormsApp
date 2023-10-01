@@ -235,10 +235,10 @@ Public Class Form1
 
                     If idx >= 0 AndAlso idx < mail_list.Count Then
                         'Debug.WriteLine(mail_list.GetItemByIndex(idx))
-                        data_line += data_line + mail_list.GetItemByIndex(idx)
+                        data_line += mail_list.GetItemByIndex(idx)
                     Else
                         'Debug.WriteLine("N/A")
-                        data_line += data_line + "N/A"
+                        data_line += "N/A"
                     End If
 
                     'Debug.WriteLine(data_line)
