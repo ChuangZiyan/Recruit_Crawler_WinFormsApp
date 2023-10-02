@@ -67,9 +67,37 @@ Public Class Form1
 
             Next
 
+
+            ' job cat retry
+            If NAVIGATION_COMPLETED = False Then
+                For jobcat_retry = 1 To 5
+                    Debug_Msg_ListBox.Items.Add("頁面未成功載入 重試 " & jobcat_retry)
+                    MainWebView2.CoreWebView2.Navigate("https://www.recruit.com.hk/jobseeker/JobSearchResult.aspx?searchPath=B&jobcat=" & jobcat)
+                    Await Delay_msec(100000)
+                    If NAVIGATION_COMPLETED Then
+                        Exit For
+                    End If
+                Next
+
+            End If
+
+
             Dim job_page_counter = 0
 
             While True
+
+                ' job cat retry
+                If NAVIGATION_COMPLETED = False Then
+                    For jobcat_retry = 1 To 5
+                        Debug_Msg_ListBox.Items.Add("頁面未成功載入 重試 " & jobcat_retry)
+                        MainWebView2.CoreWebView2.Navigate("https://www.recruit.com.hk/jobseeker/JobSearchResult.aspx?searchPath=B&jobcat=" & jobcat)
+                        Await Delay_msec(100000)
+                        If NAVIGATION_COMPLETED Then
+                            Exit For
+                        End If
+                    Next
+
+                End If
 
                 job_page_counter += 1
                 Dim job_Url_List = Await Get_Page_Job_Collection()
@@ -119,7 +147,7 @@ Public Class Form1
             NAVIGATION_COMPLETED = True
             Debug.WriteLine("PAGE READY : " & NAVIGATION_COMPLETED)
         Else
-            MsgBox("Load Page Failure")
+            Debug_Msg_ListBox.Items.Add("頁面載入失敗")
             NAVIGATION_COMPLETED = False
         End If
 
@@ -131,28 +159,39 @@ Public Class Form1
 
     Private Async Function Get_Page_Job_Collection() As Task(Of List(Of String))
 
+        For retry = 1 To 5
+            Try
+                Dim jsCode As String = "var elements = document.getElementsByClassName('title-company-col'); " +
+                                        "var result = []; " +
+                                        "for (var i = 0; i < elements.length; i++) { " +
+                                        "   var link = elements[i].getElementsByTagName('a')[0]; " +
+                                        "   if (link) { " +
+                                        "       var hrefValue = link.getAttribute('href'); " +
+                                        "       if (hrefValue) { " +
+                                        "           result.push(hrefValue); " +
+                                        "       } " +
+                                        "   } " +
+                                        "} " +
+                                        "JSON.stringify(result);"
+                Dim result As String = Await MainWebView2.ExecuteScriptAsync(jsCode)
 
-        Dim jsCode As String = "var elements = document.getElementsByClassName('title-company-col'); " +
-                        "var result = []; " +
-                        "for (var i = 0; i < elements.length; i++) { " +
-                        "   var link = elements[i].getElementsByTagName('a')[0]; " +
-                        "   if (link) { " +
-                        "       var hrefValue = link.getAttribute('href'); " +
-                        "       if (hrefValue) { " +
-                        "           result.push(hrefValue); " +
-                        "       } " +
-                        "   } " +
-                        "} " +
-                        "JSON.stringify(result);"
-        Dim result As String = Await MainWebView2.ExecuteScriptAsync(jsCode)
+                result = result.Replace("\", "").Trim("""")
 
-        result = result.Replace("\", "").Trim("""")
+                'Debug.WriteLine(result)
 
-        'Debug.WriteLine(result)
+                Dim resultList As List(Of String) = JsonConvert.DeserializeObject(Of List(Of String))(result)
 
-        Dim resultList As List(Of String) = JsonConvert.DeserializeObject(Of List(Of String))(result)
+                Return resultList
 
-        Return resultList
+            Catch ex As Exception
+                Debug_Msg_ListBox.Items.Add("取得頁面集合失敗 重試 " & retry)
+                MainWebView2.CoreWebView2.Reload()
+                Threading.Thread.Sleep(5000)
+                Continue For
+            End Try
+        Next
+
+        Return New List(Of String)
 
     End Function
 
@@ -202,63 +241,75 @@ Public Class Form1
 
         If match.Success Then
 
-            Try
+            For retry = 1 To 5
 
-                Dim jsonStr As String = match.Groups(1).Value
-                'Debug.WriteLine(jsonStr)
-                Dim jobPosting As JobPosting = JsonConvert.DeserializeObject(Of JobPosting)(jsonStr)
+                Try
 
-                'Debug.WriteLine("des: " & jobPosting.description)
+                    Dim jsonStr As String = match.Groups(1).Value
+                    'Debug.WriteLine(jsonStr)
+                    'Dim jobPosting As JobPosting = JsonConvert.DeserializeObject(Of JobPosting)(jsonStr)
+                    Dim jsonObject As JObject = JObject.Parse(jsonStr)
 
-                Dim mail_list = FindEmails(jobPosting.description)
-                Dim phone_list = FindPhoneNumbers(jobPosting.description)
-                Dim max_count As Integer
+                    Dim hiringOrganization_Obj As JObject = jsonObject("hiringOrganization").ToObject(Of JObject)()
 
-                If mail_list.Count >= phone_list.Count Then
-                    max_count = mail_list.Count
-                Else
-                    max_count = phone_list.Count
-                End If
+                    'Debug.WriteLine("des: " & jobPosting.description)
 
-                For idx As Integer = 0 To max_count - 1
+                    'MsgBox() hiringOrganization
 
-                    Dim data_line = job_Url & ";"
+                    Dim mail_list = FindEmails(jsonObject("description").ToString())
+                    Dim phone_list = FindPhoneNumbers(jsonObject("description").ToString())
+                    Dim max_count As Integer
 
-                    If idx >= 0 AndAlso idx < phone_list.Count Then
-                        'Debug.WriteLine(phone_list.GetItemByIndex(idx))
-                        data_line += phone_list.GetItemByIndex(idx) + ";"
+                    If mail_list.Count >= phone_list.Count Then
+                        max_count = mail_list.Count
                     Else
-                        'Debug.WriteLine("N/A")
-                        data_line += "N/A" + ";"
+                        max_count = phone_list.Count
                     End If
 
+                    For idx As Integer = 0 To max_count - 1
 
-                    If idx >= 0 AndAlso idx < mail_list.Count Then
-                        'Debug.WriteLine(mail_list.GetItemByIndex(idx))
-                        data_line += mail_list.GetItemByIndex(idx)
-                    Else
-                        'Debug.WriteLine("N/A")
-                        data_line += "N/A"
-                    End If
+                        Dim data_line = job_Url & ";" & hiringOrganization_Obj("name").ToString() & ";"
 
-                    'Debug.WriteLine(data_line)
+                        If idx >= 0 AndAlso idx < phone_list.Count Then
+                            'Debug.WriteLine(phone_list.GetItemByIndex(idx))
+                            data_line += phone_list.GetItemByIndex(idx) + ";"
+                        Else
+                            'Debug.WriteLine("N/A")
+                            data_line += "N/A" + ";"
+                        End If
 
-                    Using writer As New StreamWriter(result_filePath, True)
-                        writer.WriteLine(data_line)
+
+                        If idx >= 0 AndAlso idx < mail_list.Count Then
+                            'Debug.WriteLine(mail_list.GetItemByIndex(idx))
+                            data_line += mail_list.GetItemByIndex(idx)
+                        Else
+                            'Debug.WriteLine("N/A")
+                            data_line += "N/A"
+                        End If
+
+                        'Debug.WriteLine(data_line)
+
+                        Using writer As New StreamWriter(result_filePath, True)
+                            writer.WriteLine(data_line)
+                            writer.Close()
+                        End Using
+
+                    Next
+
+                    Exit For
+                Catch ex As Exception
+
+                    Using writer As New StreamWriter(searchingResultDir + "\DebugMsg_" + DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss") + ".txt", True)
+                        writer.WriteLine(script)
                         writer.Close()
                     End Using
 
-                Next
+                    Debug_Msg_ListBox.Items.Add("網址發生例外: " & WebSite_URL_Prefix + job_Url + " 重試 " & retry)
+                    Continue For
 
-            Catch ex As Exception
+                End Try
 
-                Debug_Msg_ListBox.Items.Add("網址發生例外: " & WebSite_URL_Prefix + job_Url)
-                Using writer As New StreamWriter(searchingResultDir + "\DebugMsg_" + DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss") + ".txt", True)
-                    writer.WriteLine(script)
-                    writer.Close()
-                End Using
-
-            End Try
+            Next
 
 
 
